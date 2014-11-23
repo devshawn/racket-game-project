@@ -8,9 +8,10 @@
 (define width 400)
 (define height 300)
 (define speed 10)
-(define bullet-speed 7)
-(define enemyspeed 5)
-(define spawn-speed .2)
+(define bullet-speed 1)
+(define bullet-damage 5)
+(define enemyspeed 1)
+(define spawn-speed .05)
 (define gravity 5)
 (define blank-scene (empty-scene width height))
 
@@ -24,7 +25,7 @@
 (define (main duration)
   (big-bang (make-world player-1 empty empty) 
             [to-draw show]
-            [on-tick tick .1 duration]
+            [on-tick tick .01 duration]
             [on-key key-handler]))
 
 (define (show ws)
@@ -48,7 +49,7 @@
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
 
 (define (tick ws) 
-  (make-world (world-player ws) (offscreen-bullets (move-bullets (world-bullets ws))) (offscreen-enemies (move-enemies (create-enemy (world-enemies ws))))))
+  (make-world (world-player ws) (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws)) (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-enemies ws)))))))
 
 (define (move-enemies loe)
   (cond
@@ -87,7 +88,47 @@
     [(empty? lob) empty]
     [(< (posn-y (first lob)) (- 0 (image-height bullet-img))) (offscreen-bullets (rest lob))]
     [else (cons (first lob) (offscreen-bullets (rest lob)))]))
-  
+
+; COLLISION
+; enemy-hit: posn, list of enemies -> list of enemies
+; width: 10
+; enemy: 250
+; bullet: 245
+; 245-255
+(define (enemy-hit bullet loe)
+  (cond
+    [(empty? loe) empty]
+    [(and (<= (posn-x bullet) (+ (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
+          (>= (posn-x bullet) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
+          (<= (posn-y bullet) (+ (enemy-y (first loe)) (image-height (enemy-img (first loe)))))
+          (>= (posn-y bullet) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
+     (enemy-hit bullet (rest loe))]
+    [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
+
+(define (bullet-hit lob enemy)
+  (cond
+    [(empty? lob) empty]
+    [(and (<= (posn-x (first lob)) (+ (enemy-x enemy) (image-width (enemy-img enemy))))
+          (>= (posn-x (first lob)) (- (enemy-x enemy) (image-width (enemy-img enemy))))
+          (<= (posn-y (first lob)) (+ (enemy-y enemy) (image-height (enemy-img enemy))))
+          (>= (posn-y (first lob)) (- (enemy-y enemy) (image-height (enemy-img enemy)))))
+     (bullet-hit (rest lob) enemy)]
+    [else (cons (first lob) (bullet-hit (rest lob) enemy))]))
+
+
+(define (hurt-enemy enemy)
+  (make-enemy (enemy-x enemy) (enemy-y enemy) (enemy-img enemy) (enemy-type enemy) (- (enemy-health enemy) bullet-damage) (enemy-scale enemy)))
+
+(define (return-enemies lob loe)
+  (cond
+    [(empty? lob) loe]
+    [else (return-enemies (rest lob) (enemy-hit (first lob) loe))]))
+
+(define (return-bullets lob loe)
+  (cond
+    [(empty? loe) lob]
+    [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
+
 (define (key-handler ws a-key)
   (cond
     [(key=? "w" a-key) (move ws -1 "y")]
