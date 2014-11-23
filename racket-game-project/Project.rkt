@@ -4,6 +4,16 @@
 ; Game Project
 ; Shawn Seymour & Zach Litzinger
 
+; TO-DO List
+; End Game
+; Start-screen: rules
+; Different enemies
+; Enemy Damage (hurt, not destroy)
+; Items / power-ups
+; Keyboard movement
+; Pause (P)
+; Easter egg
+
 ; Constants
 (define width 400)
 (define height 300)
@@ -102,7 +112,7 @@
           (>= (posn-x bullet) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
           (<= (posn-y bullet) (+ (enemy-y (first loe)) (image-height (enemy-img (first loe)))))
           (>= (posn-y bullet) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
-     (enemy-hit bullet (rest loe))]
+     (hurt-enemy (first loe) (enemy-hit bullet (rest loe)))]
     [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
 
 (define (bullet-hit lob enemy)
@@ -115,9 +125,10 @@
      (bullet-hit (rest lob) enemy)]
     [else (cons (first lob) (bullet-hit (rest lob) enemy))]))
 
-
-(define (hurt-enemy enemy)
-  (make-enemy (enemy-x enemy) (enemy-y enemy) (enemy-img enemy) (enemy-type enemy) (- (enemy-health enemy) bullet-damage) (enemy-scale enemy)))
+(define (hurt-enemy enemy recursive)
+  (cond
+    [(<= (enemy-health enemy) bullet-damage) recursive]
+    [else (cons (make-enemy (enemy-x enemy) (enemy-y enemy) (enemy-img enemy) (enemy-type enemy) (- (enemy-health enemy) bullet-damage) (enemy-scale enemy)) recursive)]))
 
 (define (return-enemies lob loe)
   (cond
