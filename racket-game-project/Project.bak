@@ -9,7 +9,6 @@
 ; Start-screen: rules
 ; Different enemies
 ; Enemy Damage (hurt, not destroy)
-; Enemy speed: add to structure
 ; Items / power-ups
 ; Keyboard movement
 ; Pause (P)
@@ -33,105 +32,67 @@
 (define-struct world [player bullets enemies]) ; Player struct, list of posns, list of enemies structs
 (define player-1 (make-player 200 150 (circle 10 "solid" "blue") 1))
 
-; main: Number -> World
-; Creates a world of our game that will last a given duration
 (define (main duration)
   (big-bang (make-world player-1 empty empty) 
             [to-draw show]
             [on-tick tick .01 duration]
             [on-key key-handler]))
 
-; show: World structure -> Image
-; Uses helper functions to display the game
 (define (show ws)
   (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))
 
 ; place-bullet: List of bullets, image -> Image
-; Places all bullets on top of a base image
 (define (place-bullet lob base)
   (cond
     [(empty? lob) base]
     [else (place-image bullet-img (posn-x (first lob)) (posn-y (first lob)) (place-bullet (rest lob) base))]))
 
-; place-enemies: List of enemies, image -> Image
-; Places all enemies on top of a base image
 (define (place-enemies loe base)
   (cond
     [(empty? loe) base]
     [else (place-image (enemy-img (first loe)) (enemy-x (first loe)) (enemy-y (first loe)) (place-enemies (rest loe) base))]))
+  
+(define (create-enemy loe)
+  (if (< (/ (random 100) 100) spawn-speed) (add-enemy loe) loe))
 
-; place-player: World structure, image -> Image
-; Places a player on top of a base image
 (define (place-player ws base)
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
 
-; tick: World structure -> World structure
-; on-tick function of our big-bang.
-; Creates our world using multiple functions that change the game
 (define (tick ws) 
   (make-world (world-player ws) (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws)) (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-enemies ws)))))))
 
-; move-enemies: List of enemies -> List of enemies
-; Moves all enemies based on the enemyspeed constant
 (define (move-enemies loe)
   (cond
     [(empty? loe) empty]
     [else (cons (make-enemy (enemy-x (first loe)) (+ (enemy-y (first loe)) enemyspeed) (enemy-img (first loe)) (enemy-type (first loe)) (enemy-health (first loe)) (enemy-scale (first loe))) (move-enemies (rest loe)))]))
 
-; move-bullets: List of bullets -> List of bullets
-; Moves all bullets based on the bullet-speed constant
 (define (move-bullets lob)
   (cond
     [(empty? lob) empty]
     [else (cons (make-posn (posn-x (first lob)) (- (posn-y (first lob)) bullet-speed)) (move-bullets (rest lob)))]))
 
-; move-player: World structure, number, string -> World structure
-; Makes a new player that has been moved based on the direction number
-; and axis string
-; Direction: -1 or 1
-; Axis: "x" or "y"
 (define (move-player ws direction axis)
   (if (string=? axis "x") (make-player (+ (* speed direction) (player-x ws)) (player-y ws) (player-img ws) (player-scale ws))
       (make-player (player-x ws) (+ (* speed direction) (player-y ws)) (player-img ws) (player-scale ws))))
 
-; move: World structure, number, string -> World structure
-; Re-makes the world structure by moving the player in a direction
-; based on the direction number and axis
-; See helper function: move-player
 (define (move ws direction axis)
   (make-world (move-player (world-player ws) direction axis) (world-bullets ws) (world-enemies ws)))
 
-; shoot: World structure -> World structure
-; Re-makes the world structure adding a bullet
 (define (shoot ws)
   (make-world (world-player ws) (add-bullet ws) (world-enemies ws)))
 
-; add-bullet: World structure -> List of bullets
-; Adds a new bullet shot from the current player position
-; to the current list of bullets
 (define (add-bullet ws)
   (cons (make-posn (player-x (world-player ws)) (- (player-y (world-player ws)) (* (player-scale (world-player ws)) (/ (image-height (player-img (world-player ws))) 2)))) (world-bullets ws)))
 
-; add-enemy: List of enemies -> List of enemies
-; Adds an enemy to the current list of enemies
 (define (add-enemy loe)
   (cons (make-enemy (* (random (/ width 10)) 10) -20 enemyimg 1 10 1) loe))
 
-; create-enemy: List of enemies -> List of enemies
-; Creates an enemy based on the spawn-speed probability
-(define (create-enemy loe)
-  (if (< (/ (random 100) 100) spawn-speed) (add-enemy loe) loe))
-
-; offscreen-enemies: List of enemies -> List of enemies
-; Removes enemies that have gone off of the visible screen
 (define (offscreen-enemies loe)
   (cond
     [(empty? loe) empty]
     [(> (enemy-y (first loe)) (+ height (image-height (enemy-img (first loe))))) (offscreen-enemies (rest loe))]
     [else (cons (first loe) (offscreen-enemies (rest loe)))]))
 
-; offscreen-bullets: List of bullets -> List of bullets
-; Removes bullets that have gone off of the visible screen
 (define (offscreen-bullets lob)
   (cond
     [(empty? lob) empty]
@@ -139,11 +100,11 @@
     [else (cons (first lob) (offscreen-bullets (rest lob)))]))
 
 ; COLLISION
-
-; enemy-hit: bullet, list of enemies -> List of enemies
-; Checks all enemies for touching one bullet. If they touch,
-; this function hurts or removes the enemy and returns the
-; rest of the enemy list
+; enemy-hit: posn, list of enemies -> list of enemies
+; width: 10
+; enemy: 250
+; bullet: 245
+; 245-255
 (define (enemy-hit bullet loe)
   (cond
     [(empty? loe) empty]
@@ -154,10 +115,6 @@
      (hurt-enemy (first loe) (enemy-hit bullet (rest loe)))]
     [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
 
-; bullet-hit: List of bullets, enemy -> List of bullets
-; Checks all bullets for touching one enemy. If they touch,
-; this function removes the bullet and returns the
-; rest of the bullet list
 (define (bullet-hit lob enemy)
   (cond
     [(empty? lob) empty]
@@ -168,32 +125,21 @@
      (bullet-hit (rest lob) enemy)]
     [else (cons (first lob) (bullet-hit (rest lob) enemy))]))
 
-; hurt-enemy: enemy, a function -> a function
-; This is a bit of an abstract function. It either
-; hurts an enemy or doesn't return an enemy
-; Uses "recursive" parameter to pass the recursive function
-; from it's parent function enemy-hit
 (define (hurt-enemy enemy recursive)
   (cond
     [(<= (enemy-health enemy) bullet-damage) recursive]
     [else (cons (make-enemy (enemy-x enemy) (enemy-y enemy) (enemy-img enemy) (enemy-type enemy) (- (enemy-health enemy) bullet-damage) (enemy-scale enemy)) recursive)]))
 
-; return-bullets: List of posns, list of enemies -> list of enemies
-; Recursively uses enemy-hit to determine if any enemies have been hit
 (define (return-enemies lob loe)
   (cond
     [(empty? lob) loe]
     [else (return-enemies (rest lob) (enemy-hit (first lob) loe))]))
 
-; return-bullets: List of posns, list of enemies -> list of posns
-; Recursively uses bullet-hit to determine if any bullets hit any enemies
 (define (return-bullets lob loe)
   (cond
     [(empty? loe) lob]
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
-; key-handler: World structure, key -> World structure
-; Takes a world structure and changes it based on a key
 (define (key-handler ws a-key)
   (cond
     [(key=? "w" a-key) (move ws -1 "y")]
