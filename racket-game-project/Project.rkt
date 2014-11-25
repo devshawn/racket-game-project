@@ -111,18 +111,27 @@
 (define (move ws)
   (make-player
    (cond
-     [(keys-left (world-keys ws)) (- (player-x (world-player ws)) speed)]
-     [(keys-right (world-keys ws)) (+ (player-x (world-player ws)) speed)]
+     [(keys-left (world-keys ws)) (limit-player-x (- (player-x (world-player ws)) speed))]
+     [(keys-right (world-keys ws)) (limit-player-x (+ (player-x (world-player ws)) speed))]
      [else (player-x (world-player ws))])
    (cond
-     [(keys-up (world-keys ws)) (- (player-y (world-player ws)) speed)]
-     [(keys-down (world-keys ws)) (+ (player-y (world-player ws)) speed)]
+     [(keys-up (world-keys ws)) (limit-player-y (- (player-y (world-player ws)) speed))]
+     [(keys-down (world-keys ws)) (limit-player-y (+ (player-y (world-player ws)) speed))]
      [else (player-y (world-player ws))])
    (player-img (world-player ws))
    (player-scale (world-player ws))
    (player-points (world-player ws))))
+
+
+(define (limit-player-x n)
+  (cond [(>= n (image-width blank-scene)) (image-width blank-scene)]
+        [(<= n 0) 0]
+        [else n]))
    
-  
+(define (limit-player-y n)
+  (cond [(>= n (image-height blank-scene)) (image-height blank-scene)]
+        [(<= n 0) 0]
+        [else n]))
 
      
 
