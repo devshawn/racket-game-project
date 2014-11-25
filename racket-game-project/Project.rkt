@@ -32,7 +32,7 @@
 (define-struct player [x y img scale points])
 (define-struct enemy [x y img type health scale])
 (define-struct world [player bullets enemies]) ; Player struct, list of posns, list of enemies structs
-(define player-1 (make-player 200 150 (bitmap "images/player.png") 1 0))
+(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1 0))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
