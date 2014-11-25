@@ -235,26 +235,30 @@
 ; key was pushed
 (define (key-push-handler ws a-key)
   (cond
-    [(key=? "w" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) true (keys-down (world-keys ws))))]
-    [(key=? "s" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) true))]
-    [(key=? "a" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys true (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
-    [(key=? "d" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) true (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(or (key=? "w" a-key)
+         (key=? "up" a-key))(make-world 
+                             (world-player ws) 
+                             (world-bullets ws) 
+                             (world-enemies ws) 
+                             (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) true (keys-down (world-keys ws))))]
+    [(or (key=? "s" a-key)
+         (key=? "down" a-key))(make-world 
+                               (world-player ws) 
+                               (world-bullets ws) 
+                               (world-enemies ws) 
+                               (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) true))]
+    [(or (key=? "a" a-key)
+         (key=? "left" a-key))(make-world 
+                               (world-player ws) 
+                               (world-bullets ws) 
+                               (world-enemies ws) 
+                               (make-keys true (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(or (key=? "d" a-key)
+         (key=? "right" a-key))(make-world 
+                                (world-player ws) 
+                                (world-bullets ws) 
+                                (world-enemies ws) 
+                                (make-keys (keys-left (world-keys ws)) true (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
     [(key=? " " a-key) (shoot ws)]
     [else ws]))
 
@@ -263,26 +267,30 @@
 ; key was pushed
 (define (key-release-handler ws a-key)
   (cond
-    [(key=? "w" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) false (keys-down (world-keys ws))))]
-    [(key=? "s" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) false))]
-    [(key=? "a" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys false (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
-    [(key=? "d" a-key) (make-world 
-                        (world-player ws) 
-                        (world-bullets ws) 
-                        (world-enemies ws) 
-                        (make-keys (keys-left (world-keys ws)) false (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(or (key=? "w" a-key)
+         (key=? "up" a-key))(make-world 
+                             (world-player ws) 
+                             (world-bullets ws) 
+                             (world-enemies ws) 
+                             (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) false (keys-down (world-keys ws))))]
+    [(or (key=? "s" a-key)
+         (key=? "down" a-key))(make-world 
+                               (world-player ws) 
+                               (world-bullets ws) 
+                               (world-enemies ws) 
+                               (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) false))]
+    [(or (key=? "a" a-key)
+         (key=? "left" a-key))(make-world 
+                               (world-player ws) 
+                               (world-bullets ws) 
+                               (world-enemies ws) 
+                               (make-keys false (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(or (key=? "d" a-key)
+         (key=? "right" a-key))(make-world 
+                                (world-player ws) 
+                                (world-bullets ws) 
+                                (world-enemies ws) 
+                                (make-keys (keys-left (world-keys ws)) false (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
     [else ws]))
 
 (main 10000000)
