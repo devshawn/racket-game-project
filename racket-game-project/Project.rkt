@@ -150,7 +150,7 @@
 ; add-enemy: List of enemies -> List of enemies
 ; Adds an enemy to the current list of enemies
 (define (add-enemy loe)
-  (cons (make-enemy (* (random (/ width 10)) 10) -20 enemyimg 1 10 1) loe))
+  (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 10 1) loe))
 
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
@@ -162,7 +162,7 @@
 (define (offscreen-enemies loe)
   (cond
     [(empty? loe) empty]
-    [(> (enemy-y (first loe)) (+ height (image-height (enemy-img (first loe))))) (offscreen-enemies (rest loe))]
+    [(> (enemy-y (first loe)) (+ (image-height blank-scene) (image-height (enemy-img (first loe))))) (offscreen-enemies (rest loe))]
     [else (cons (first loe) (offscreen-enemies (rest loe)))]))
 
 ; offscreen-bullets: List of bullets -> List of bullets
