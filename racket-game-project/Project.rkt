@@ -11,7 +11,6 @@
 ; Enemy Damage (hurt, not destroy)
 ; Enemy speed: add to structure
 ; Items / power-ups
-; Keyboard movement
 ; Pause (P)
 ; Easter egg
 
@@ -98,36 +97,9 @@
     [(empty? lob) empty]
     [else (cons (make-posn (posn-x (first lob)) (- (posn-y (first lob)) bullet-speed)) (move-bullets (rest lob)))]))
 
-; move-player: World structure, number, string -> World structure
-; Makes a new player that has been moved based on the direction number
-; and axis string
-; Direction: -1 or 1
-; Axis: "x" or "y"
-(define (move-player ws direction axis)
-  (if (string=? axis "x") 
-      (make-player 
-       (+ (* speed direction) (player-x ws)) 
-       (player-y ws) 
-       (player-img ws) 
-       (player-scale ws) 
-       (player-points ws) 
-       (player-health ws))
-      (make-player 
-       (player-x ws) 
-       (+ (* speed direction) (player-y ws)) 
-       (player-img ws) 
-       (player-scale ws) 
-       (player-points ws) 
-       (player-health ws))))
-
-; move: World structure, number, string -> World structure
-; Re-makes the world structure by moving the player in a direction
-; based on the direction number and axis
-; See helper function: move-player
-;(define (move ws direction axis)
-;  (make-world (move-player (world-player ws) direction axis) (world-bullets ws) (world-enemies ws) (world-keys ws)))
-
 ; move: World structure -> Player
+; Checks the world-keys for keys-pushed. Moves the player
+; based on which "keys" are true (pushed).
 (define (move ws)
   (make-player
    (cond
@@ -143,19 +115,19 @@
    (player-points (world-player ws))
    (player-health (world-player ws))))
 
-
+; limit-player-x: Number -> Number
+; Limits the player's movement in the x-axis
 (define (limit-player-x n)
   (cond [(>= n (image-width blank-scene)) (image-width blank-scene)]
         [(<= n 0) 0]
         [else n]))
 
+; limit-player-y: Number -> Number
+; Limits the player's movement in the y-axis
 (define (limit-player-y n)
   (cond [(>= n (image-height blank-scene)) (image-height blank-scene)]
         [(<= n 0) 0]
         [else n]))
-
-
-
 
 ; shoot: World structure -> World structure
 ; Re-makes the world structure adding a bullet
@@ -259,7 +231,8 @@
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
 ; key-push-handler: World structure, key -> World structure
-; Takes a world structure and changes it based on a key
+; Takes a world structure and changes the "world-key" based on which
+; key was pushed
 (define (key-push-handler ws a-key)
   (cond
     [(key=? "w" a-key) (make-world 
@@ -285,6 +258,9 @@
     [(key=? " " a-key) (shoot ws)]
     [else ws]))
 
+; key-release-handler: World structure, key -> World structure
+; Takes a world structure and changes the "world-key" based on which
+; key was pushed
 (define (key-release-handler ws a-key)
   (cond
     [(key=? "w" a-key) (make-world 
