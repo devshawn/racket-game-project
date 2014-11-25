@@ -22,22 +22,23 @@
 (define bullet-speed 1)
 (define bullet-damage 5)
 (define enemyspeed 1)
-(define spawn-speed .03)
+(define spawn-speed .05)
 (define gravity 5)
-(define blank-scene (scale 1.5 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
+(define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define worldscale 1)
 
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemyimg (bitmap "images/enemy1.png"))
 (define-struct player [x y img scale points])
 (define-struct enemy [x y img type health scale])
-(define-struct world [player bullets enemies]) ; Player struct, list of posns, list of enemies structs
-(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1 0))
+(define-struct keys [left right up down])
+(define-struct world [player bullets enemies keys]) ; Player struct, list of posns, list of enemies structs
+(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
 (define (main duration)
-  (big-bang (make-world player-1 empty empty) 
+  (big-bang (make-world player-1 empty empty (make-keys false false false false)) 
             [to-draw show]
             [on-tick tick .01 duration]
             [on-key key-handler]))
