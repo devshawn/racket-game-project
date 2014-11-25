@@ -18,7 +18,7 @@
 ; Constants
 (define width 400)
 (define height 300)
-(define speed 10)
+(define speed 4)
 (define bullet-speed 1)
 (define bullet-damage 5)
 (define enemyspeed 1)
@@ -41,7 +41,8 @@
   (big-bang (make-world player-1 empty empty (make-keys false false false false)) 
             [to-draw show]
             [on-tick tick .01 duration]
-            [on-key key-handler]))
+            [on-key key-push-handler]
+            [on-release key-release-handler]))
 
 ; show: World structure -> Image
 ; Uses helper functions to display the game
@@ -71,7 +72,10 @@
 ; on-tick function of our big-bang.
 ; Creates our world using multiple functions that change the game
 (define (tick ws) 
-  (make-world (world-player ws) (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws)) (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-enemies ws)))))))
+  (make-world (move ws)
+              (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws))
+              (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-enemies ws)))))
+              (world-keys ws)))
 
 ; move-enemies: List of enemies -> List of enemies
 ; Moves all enemies based on the enemyspeed constant
@@ -100,13 +104,33 @@
 ; Re-makes the world structure by moving the player in a direction
 ; based on the direction number and axis
 ; See helper function: move-player
-(define (move ws direction axis)
-  (make-world (move-player (world-player ws) direction axis) (world-bullets ws) (world-enemies ws)))
+;(define (move ws direction axis)
+;  (make-world (move-player (world-player ws) direction axis) (world-bullets ws) (world-enemies ws) (world-keys ws)))
+
+; move: World structure -> Player
+(define (move ws)
+  (make-player
+   (cond
+     [(keys-left (world-keys ws)) (- (player-x (world-player ws)) speed)]
+     [(keys-right (world-keys ws)) (+ (player-x (world-player ws)) speed)]
+     [else (player-x (world-player ws))])
+   (cond
+     [(keys-up (world-keys ws)) (- (player-y (world-player ws)) speed)]
+     [(keys-down (world-keys ws)) (+ (player-y (world-player ws)) speed)]
+     [else (player-y (world-player ws))])
+   (player-img (world-player ws))
+   (player-scale (world-player ws))
+   (player-points (world-player ws))))
+   
+  
+
+     
+
 
 ; shoot: World structure -> World structure
 ; Re-makes the world structure adding a bullet
 (define (shoot ws)
-  (make-world (world-player ws) (add-bullet ws) (world-enemies ws)))
+  (make-world (world-player ws) (add-bullet ws) (world-enemies ws) (world-keys ws)))
 
 ; add-bullet: World structure -> List of bullets
 ; Adds a new bullet shot from the current player position
@@ -194,15 +218,23 @@
     [(empty? loe) lob]
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
-; key-handler: World structure, key -> World structure
+; key-push-handler: World structure, key -> World structure
 ; Takes a world structure and changes it based on a key
-(define (key-handler ws a-key)
+(define (key-push-handler ws a-key)
   (cond
-    [(key=? "w" a-key) (move ws -1 "y")]
-    [(key=? "s" a-key) (move ws 1 "y")]
-    [(key=? "a" a-key) (move ws -1 "x")]
-    [(key=? "d" a-key) (move ws 1 "x")]
+    [(key=? "w" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) true (keys-down (world-keys ws))))]
+    [(key=? "s" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) true))]
+    [(key=? "a" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys true (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(key=? "d" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) true (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
     [(key=? " " a-key) (shoot ws)]
+    [else ws]))
+
+(define (key-release-handler ws a-key)
+  (cond
+    [(key=? "w" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) false (keys-down (world-keys ws))))]
+    [(key=? "s" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) false))]
+    [(key=? "a" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys false (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
+    [(key=? "d" a-key) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (make-keys (keys-left (world-keys ws)) false (keys-up (world-keys ws)) (keys-down (world-keys ws))))]
     [else ws]))
 
 (main 10000000)
