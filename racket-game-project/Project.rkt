@@ -22,12 +22,15 @@
 (define bullet-damage 5)
 (define enemyspeed 1)
 (define spawn-speed .05)
+(define spawn-speed2 .01)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define worldscale 1)
 
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemyimg (bitmap "images/enemy1.png"))
+(define wizardimg (bitmap "images/wizard.png"))
+(define giantimg (bitmap "images/giant.png"))
 (define-struct player [x y img scale points health])
 (define-struct enemy [x y img type health scale])
 (define-struct keys [left right up down])
@@ -145,13 +148,19 @@
 
 ; add-enemy: List of enemies -> List of enemies
 ; Adds an enemy to the current list of enemies
-(define (add-enemy loe)
-  (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 5 1) loe))
+(define (add-enemy name loe)
+  (cond
+    [(string=? name "enemy") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 5 1) loe)]
+    [(string=? name "wizard") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 2 10 1) loe)]
+    [else loe]))
 
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
 (define (create-enemy loe)
-  (if (< (/ (random 100) 100) spawn-speed) (add-enemy loe) loe))
+  (cond
+    [(< (/ (random 100) 100) spawn-speed) (add-enemy "enemy" loe)]
+    [(< (/ (random 100) 100) spawn-speed2) (add-enemy "wizard" loe)]
+    [else loe]))
 
 ; offscreen-enemies: List of enemies -> List of enemies
 ; Removes enemies that have gone off of the visible screen
