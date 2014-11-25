@@ -29,11 +29,11 @@
 
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemyimg (bitmap "images/enemy1.png"))
-(define-struct player [x y img scale points])
+(define-struct player [x y img scale points health])
 (define-struct enemy [x y img type health scale])
 (define-struct keys [left right up down])
 (define-struct world [player bullets enemies keys]) ; Player struct, list of posns, list of enemies structs
-(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0))
+(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 10))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
@@ -97,8 +97,8 @@
 ; Direction: -1 or 1
 ; Axis: "x" or "y"
 (define (move-player ws direction axis)
-  (if (string=? axis "x") (make-player (+ (* speed direction) (player-x ws)) (player-y ws) (player-img ws) (player-scale ws) (player-points ws))
-      (make-player (player-x ws) (+ (* speed direction) (player-y ws)) (player-img ws) (player-scale ws) (player-points ws))))
+  (if (string=? axis "x") (make-player (+ (* speed direction) (player-x ws)) (player-y ws) (player-img ws) (player-scale ws) (player-points ws) (player-health ws))
+      (make-player (player-x ws) (+ (* speed direction) (player-y ws)) (player-img ws) (player-scale ws) (player-points ws) (player-health ws))))
 
 ; move: World structure, number, string -> World structure
 ; Re-makes the world structure by moving the player in a direction
@@ -120,7 +120,8 @@
      [else (player-y (world-player ws))])
    (player-img (world-player ws))
    (player-scale (world-player ws))
-   (player-points (world-player ws))))
+   (player-points (world-player ws))
+   (player-health (world-player ws))))
 
 
 (define (limit-player-x n)
@@ -150,7 +151,7 @@
 ; add-enemy: List of enemies -> List of enemies
 ; Adds an enemy to the current list of enemies
 (define (add-enemy loe)
-  (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 10 1) loe))
+  (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 5 1) loe))
 
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
