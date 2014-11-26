@@ -20,15 +20,19 @@
 (define speed 4)
 (define bullet-speed 1)
 (define bullet-damage 5)
+(define bullet-limit 2)
 (define enemyspeed 1)
-(define spawn-speed .05)
-(define spawn-speed2 .01)
+(define spawn-speed .03)
+(define spawn-speed2 .005)
+(define spawn-speed3 .005)
+(define spawn-speed4 0.001)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define worldscale 1)
-(define font 36)
+
 (define bullet-img (bitmap "images/bullet.png"))
-(define enemyimg (bitmap "images/enemy1.png"))
+(define enemy1img (bitmap "images/enemy1.png"))
+(define enemy2img (bitmap "images/enemy2.png"))
 (define wizardimg (bitmap "images/wizard.png"))
 (define giantimg (bitmap "images/giant.png"))
 (define-struct player [x y img scale points health])
@@ -49,7 +53,7 @@
 ; show: World structure -> Image
 ; Uses helper functions to display the game
 (define (show ws)
-  (scale worldscale (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))
+  (scale worldscale (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene)))))
 
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
@@ -69,14 +73,6 @@
 ; Places a player on top of a base image
 (define (place-player ws base)
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
-
-;place-points
-;Places the points in the top right corner
-(define (place-points font-size player base)
-  (place-image (text (number->string (player-points player)) font-size "white") 
-               (- (image-width blank-scene) (image-width (text (number->string (player-points player)) font-size "white")))
-               (image-height (text (number->string (player-points player)) font-size "white")) base))
-
 
 ; tick: World structure -> World structure
 ; on-tick function of our big-bang.
@@ -149,25 +145,29 @@
 ; Adds a new bullet shot from the current player position
 ; to the current list of bullets
 (define (add-bullet ws)
-  (cons (make-posn 
+  (if (< (length (world-bullets ws)) bullet-limit) (cons (make-posn 
          (player-x (world-player ws)) 
          (- (player-y (world-player ws)) (* (player-scale (world-player ws)) (/ (image-height (player-img (world-player ws))) 2)))) 
-        (world-bullets ws)))
+        (world-bullets ws)) (world-bullets ws)))
 
 ; add-enemy: List of enemies -> List of enemies
 ; Adds an enemy to the current list of enemies
 (define (add-enemy name loe)
   (cond
-    [(string=? name "enemy") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemyimg 1 5 1) loe)]
-    [(string=? name "wizard") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 2 10 1) loe)]
+    [(string=? name "enemy1") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy1img 1 5 1) loe)]
+    [(string=? name "enemy2") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy2img 1 10 1) loe)]
+    [(string=? name "wizard") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 2 15 1) loe)]
+    [(string=? name "giant") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 giantimg 2 20 1) loe)]
     [else loe]))
 
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
 (define (create-enemy loe)
   (cond
-    [(< (/ (random 100) 100) spawn-speed) (add-enemy "enemy" loe)]
+    [(< (/ (random 100) 100) spawn-speed) (add-enemy "enemy1" loe)]
     [(< (/ (random 100) 100) spawn-speed2) (add-enemy "wizard" loe)]
+    [(< (/ (random 100) 100) spawn-speed3) (add-enemy "enemy2" loe)]
+    [(< (/ (random 100) 100) spawn-speed4) (add-enemy "giant" loe)]
     [else loe]))
 
 ; offscreen-enemies: List of enemies -> List of enemies
@@ -201,8 +201,6 @@
           (>= (posn-y bullet) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
      (hurt-enemy (first loe) (enemy-hit bullet (rest loe)))]
     [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
-
-
 
 ; bullet-hit: List of bullets, enemy -> List of bullets
 ; Checks all bullets for touching one enemy. If they touch,
