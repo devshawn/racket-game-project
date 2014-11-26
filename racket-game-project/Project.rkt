@@ -26,7 +26,7 @@
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define worldscale 1)
-
+(define font 36)
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemyimg (bitmap "images/enemy1.png"))
 (define wizardimg (bitmap "images/wizard.png"))
@@ -49,7 +49,7 @@
 ; show: World structure -> Image
 ; Uses helper functions to display the game
 (define (show ws)
-  (scale worldscale (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene)))))
+  (scale worldscale (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))
 
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
@@ -69,6 +69,14 @@
 ; Places a player on top of a base image
 (define (place-player ws base)
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
+
+;place-points
+;Places the points in the top right corner
+(define (place-points font-size player base)
+  (place-image (text (number->string (player-points player)) font-size "white") 
+               (- (image-width blank-scene) (image-width (text (number->string (player-points player)) font-size "white")))
+               (image-height (text (number->string (player-points player)) font-size "white")) base))
+
 
 ; tick: World structure -> World structure
 ; on-tick function of our big-bang.
@@ -193,6 +201,8 @@
           (>= (posn-y bullet) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
      (hurt-enemy (first loe) (enemy-hit bullet (rest loe)))]
     [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
+
+
 
 ; bullet-hit: List of bullets, enemy -> List of bullets
 ; Checks all bullets for touching one enemy. If they touch,
