@@ -1,3 +1,6 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Project) (read-case-sensitive #t) (teachpacks ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp")))))
 ; Game Project
 ; Shawn Seymour & Zach Litzinger
 
@@ -15,7 +18,7 @@
 (define speed 4)
 (define bullet-speed 1)
 (define bullet-damage 5)
-(define bullet-limit 20)
+(define bullet-limit 2)
 (define enemyspeed 1)
 (define spawn-speed .03)
 (define spawn-speed2 .005)
@@ -61,7 +64,7 @@
 ;Places the points in the top right corner
 (define (place-points font-size player base)
   (place-image (text (number->string (player-points player)) font-size "white") 
-               (image-width (text (number->string (player-points player)) font-size "white"))
+               (+ (/ (image-width (text (number->string (player-points player)) font-size "white")) 2) 5)
                24 base))
 
 ; place-enemies: List of enemies, image -> Image
@@ -348,3 +351,12 @@
     [else ws]))
 
 (main 10000000)
+
+
+;intro ~ to do
+
+(define rules (text "Hello" 10 "white"))
+
+(define intro 
+  (place-image 
+   rules (/ (image-width (bitmap "images/intro.png")) 2) (/ (image-height (bitmap "images/intro.png")) 2) (bitmap "images/intro.png")))
