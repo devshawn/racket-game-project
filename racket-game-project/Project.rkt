@@ -51,8 +51,12 @@
 ; show: World structure -> Image
 ; Uses helper functions to display the game
 (define (show ws)
-  (scale worldscale (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))
+  (scale worldscale (place-hearts (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene)))))))
 
+(define fadedhealth (overlay/xy (bitmap "images/fadedheart.png") 30 0 (overlay/xy (bitmap "images/fadedheart.png") 30 0 (overlay/xy (bitmap "images/fadedheart.png") 30 0 (empty-scene 0 0)))))
+
+(define (place-hearts ws)
+  (place-image fadedhealth (- (image-width ws) 50) 24 ws))
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
 (define (place-bullet lob base)
