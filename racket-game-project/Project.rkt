@@ -1,6 +1,3 @@
-;; The first three lines of this file were inserted by DrRacket. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Project) (read-case-sensitive #t) (teachpacks ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp")))))
 ; Game Project
 ; Shawn Seymour & Zach Litzinger
 
@@ -23,7 +20,7 @@
 (define spawn-speed4 0.001)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
-(define worldscale 2)
+(define worldscale 1)
 (define font 36)
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemy1img (bitmap "images/enemy1.png"))
@@ -236,8 +233,8 @@
     [(empty? loe) empty]
     [(and (<= (player-x player) (+ (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
           (>= (player-x player) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (<= (player-y player) (+ (enemy-y (first loe)) (image-height (enemy-img (first loe)))))
-          (>= (player-y player) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
+          (<= (player-y player) (+ (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5)))
+          (>= (player-y player) (- (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5))))
      (delete-enemy-on-hit player (rest loe))]
     [else (cons (first loe) (delete-enemy-on-hit player (rest loe)))]))
 
@@ -248,8 +245,8 @@
     [(empty? loe) player]
     [(and (<= (player-x player) (+ (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
           (>= (player-x player) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (<= (player-y player) (+ (enemy-y (first loe)) (image-height (enemy-img (first loe)))))
-          (>= (player-y player) (- (enemy-y (first loe)) (image-height (enemy-img (first loe))))))
+          (<= (player-y player) (+ (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5)))
+          (>= (player-y player) (- (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5))))
      (make-player (player-x player) (player-y player) (player-img player) (player-scale player) (player-points player) (- (player-health player) 1))]
     [else (player-hit player (rest loe))]))
 
