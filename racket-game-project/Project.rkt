@@ -1,12 +1,12 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Project) (read-case-sensitive #t) (teachpacks ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp")))))
-; Game Project
+; Medievala
+; 1301 Game Project
 ; Shawn Seymour & Zach Litzinger
 
-; TO-DO List
-; End Game
-; Easter egg
+; Uploaded at:
+; http://github.com/devshawn/racket-game-project
 
 ; Structures
 (define-struct player [x y img scale points health])
@@ -15,6 +15,8 @@
 (define-struct world [player bullets enemies keys killed-enemies started]) ; Player struct, list of posns, list of enemies structs
 
 ; Constants
+(define worldscale 1)
+(define game-name "Medievala")
 (define speed 4)
 (define bullet-speed 1)
 (define bullet-damage 5)
@@ -29,7 +31,6 @@
 (define spawn-tier-giant 600)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
-(define worldscale 1)
 (define font 36)
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemy1img (bitmap "images/enemy1.png"))
@@ -39,7 +40,7 @@
 (define endscreen (bitmap "images/intro.png"))
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
-(define gamename (scale worldscale (text "Game Project" 40 "white")))
+(define gamename (scale worldscale (text game-name 40 "white")))
 (define rules (scale worldscale (above
                (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
                (beside (text "The " 20 "white") enemy1img (text " is the Knight; worth 10 points!" 20 "white"))
@@ -49,7 +50,6 @@
                (text "Survive for as long as you can!" 20 "white")
                (text "Press X to start!" 20 "white")
                )))
-
 (define intro 
   (place-image gamename (/ (image-width startscreen) 2) 50 (place-image 
    rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen)))
@@ -62,7 +62,8 @@
             [on-tick tick .01 duration]
             [on-key key-push-handler]
             [stop-when check-end final-scene]
-            [on-release key-release-handler]))
+            [on-release key-release-handler]
+            [name game-name]))
 
 ; show: World structure -> Image
 ; Uses helper functions to display the game
@@ -103,6 +104,21 @@
 ; Places a player on top of a base image
 (define (place-player ws base)
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
+
+; final-scene: World structure -> Image
+; Creates the final scene on end game
+(define (final-scene ws)
+  (place-image (end-text (world-player ws)) (/ (image-width (scale worldscale blank-scene)) 2) (/ (image-height (scale worldscale blank-scene)) 2)
+  (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
+
+; end-text: Player -> Image
+; Creates the end game text from player points
+(define (end-text player)
+  (scale worldscale (above
+                     (text "Congratulations!" 40 "white")
+                     (text (string-append "You finished with " (number->string (player-points player)) " points!") 35 "white")
+                     (text " " 25 "white")
+                     (text (string-append "Thank you for playing " game-name "!") 30 "white"))))
 
 ; tick: World structure -> World structure
 ; on-tick function of our big-bang.
@@ -255,7 +271,8 @@
      (bullet-hit (rest lob) enemy)]
     [else (cons (first lob) (bullet-hit (rest lob) enemy))]))
 
-; delete-enemy-on-hit
+; delete-enemy-on-hit: Player, list of enemies -> List of enemies
+; Deletes the enemy when hit by a player
 (define (delete-enemy-on-hit player loe)
   (cond
     [(empty? loe) empty]
@@ -267,7 +284,7 @@
     [else (cons (first loe) (delete-enemy-on-hit player (rest loe)))]))
 
 ; player-hit: Player, list of enemies -> Player
-; Hurts player when hit
+; Hurts player when player touches an enemy
 (define (player-hit player loe)
   (cond
     [(empty? loe) player]
@@ -295,48 +312,38 @@
                  (enemy-scale enemy)) 
                 recursive)]))
 
+; kill-enemy: World structure -> World structure
+; Checks for kileld enemies and moves it to killed-enemies
 (define (kill-enemy ws)
-  (cond
-    [else (make-world (world-player ws)
+  (make-world (world-player ws)
                  (world-bullets ws)
                  (delete-enemies (world-enemies ws))
                  (world-keys ws)
                  (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
-                 (world-started ws))]))
+                 (world-started ws)))
 
+; delete-enemies: List of enemies -> List of enemies
+; Deletes enemy when enemy health is zero
 (define (delete-enemies loe)
   (cond
     [(empty? loe) empty]
     [(= (enemy-health (first loe)) 0) (delete-enemies (rest loe))]
     [else (cons (first loe) (delete-enemies (rest loe)))]))
 
+; filter-enemies: List of enemies -> List of enemies
+; "Moves" killed enemies to killed-enemies in the world structure
 (define (filter-enemies loe)
   (cond
     [(empty? loe) empty]
     [(= (enemy-health (first loe)) 0) (cons (first loe) (filter-enemies (rest loe)))]
     [else (filter-enemies (rest loe))]))
 
+; count-points: List of killed enemies -> Number
+; Adds the points of each killed enemy
 (define (count-points loke)
   (cond
     [(empty? loke) 0]
     [else (+ (enemy-type (first loke)) (count-points (rest loke)))]))
-
-(define (pause ws)
-  (cond
-    [(keys-pause (world-keys ws)) (make-world 
-                                (world-player ws) 
-                                (world-bullets ws) 
-                                (world-enemies ws) 
-                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) false)
-                                (world-killed-enemies ws)
-                                (world-started ws))]
-    [else (make-world 
-                                (world-player ws) 
-                                (world-bullets ws) 
-                                (world-enemies ws) 
-                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) true)
-                                (world-killed-enemies ws)
-                                (world-started ws))]))
 
 ; return-bullets: List of posns, list of enemies -> list of enemies
 ; Recursively uses enemy-hit to determine if any enemies have been hit
@@ -352,19 +359,10 @@
     [(empty? loe) lob]
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
+; check-end: World structure -> Boolean
+; Checks if the player has been killed
 (define (check-end ws)
-  (cond
-    [(<= (player-health (world-player ws)) 0) true]
-    [else false]))
-
-(define (final-scene ws)
-  (place-image (end-text (world-player ws)) (/ (image-width (scale worldscale blank-scene)) 2) (/ (image-height (scale worldscale blank-scene)) 2)
-  (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
-
-(define (end-text player)
-  (scale worldscale (above
-                     (text "Congratulations!" 40 "white")
-                     (text (string-append "You finished with " (number->string (player-points player)) " points!") 35 "white"))))
+  (<= (player-health (world-player ws)) 0))
 
 ; key-push-handler: World structure, key -> World structure
 ; Takes a world structure and changes the "world-key" based on which
@@ -404,7 +402,14 @@
                                 (world-killed-enemies ws)
                                 (world-started ws))]
     [(key=? " " a-key) (shoot ws)]
-    [(key=? "p" a-key) (pause ws)]
+    [(and (key=? "p" a-key)
+          (world-started ws)) (make-world 
+                                (world-player ws) 
+                                (world-bullets ws) 
+                                (world-enemies ws) 
+                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (not (keys-pause (world-keys ws))))
+                                (world-killed-enemies ws)
+                                (world-started ws))]
     [(key=? "x" a-key) (make-world 
                                 (world-player ws) 
                                 (world-bullets ws) 
@@ -453,4 +458,4 @@
                                 (world-started ws))]
     [else ws]))
 
-(main 10000000)
+(main 10000000000)
