@@ -6,10 +6,13 @@
 
 ; TO-DO List
 ; End Game
-; Start-screen: rules
-; Enemy speed: add to structure
-; Items / power-ups [optional]
 ; Easter egg
+
+; Structures
+(define-struct player [x y img scale points health])
+(define-struct enemy [x y img type health scale])
+(define-struct keys [left right up down pause])
+(define-struct world [player bullets enemies keys killed-enemies started]) ; Player struct, list of posns, list of enemies structs
 
 ; Constants
 (define speed 4)
@@ -21,6 +24,9 @@
 (define spawn-speed2 .005)
 (define spawn-speed3 .005)
 (define spawn-speed4 0.001)
+(define spawn-tier-enemy2 100)
+(define spawn-tier-wizard 300)
+(define spawn-tier-giant 600)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define worldscale 1)
@@ -32,22 +38,21 @@
 (define giantimg (bitmap "images/Giant.png"))
 (define endscreen (bitmap "images/intro.png"))
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
-(define-struct player [x y img scale points health])
-(define-struct enemy [x y img type health scale])
-(define-struct keys [left right up down pause])
-(define-struct world [player bullets enemies keys killed-enemies started]) ; Player struct, list of posns, list of enemies structs
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
-(define gamename (text "Game Project" 40 "white"))
-(define rules (above
-               (text "Hello," 20 "white")
+(define gamename (scale worldscale (text "Game Project" 40 "white")))
+(define rules (scale worldscale (above
                (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
-               (beside (text "The " 20 "white") enemy1img (text " will be the first enemy; worth 10 points!" 20 "white"))
+               (beside (text "The " 20 "white") enemy1img (text " is the Knight; worth 10 points!" 20 "white"))
+               (beside (text "The " 20 "white") enemy2img (text " is the Black Knight; worth 20 points!" 20 "white"))
+               (beside (text "The " 20 "white") wizardimg (text " is the Wizard; worth 50 points!" 20 "white"))
+               (beside (text "The " 20 "white") giantimg (text " is the Giant; worth 100 points!" 20 "white"))
+               (text "Survive for as long as you can!" 20 "white")
                (text "Press X to start!" 20 "white")
-               ))
+               )))
 
 (define intro 
   (place-image gamename (/ (image-width startscreen) 2) 50 (place-image 
-   rules (/ (image-width startscreen) 2) (/ (image-height startscreen) 2) startscreen)))
+   rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen)))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
@@ -109,7 +114,7 @@
     [else (kill-enemy (make-world 
               (player-hit (move ws) (world-enemies ws))
               (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws))
-              (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (delete-enemy-on-hit (world-player ws) (world-enemies ws))))))
+              (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws))))))
               (world-keys ws)
               (world-killed-enemies ws)
               (world-started ws)))]))
@@ -196,12 +201,12 @@
 
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
-(define (create-enemy loe)
+(define (create-enemy player loe)
   (cond
     [(< (/ (random 100) 100) spawn-speed) (add-enemy "enemy1" loe)]
-    [(< (/ (random 100) 100) spawn-speed2) (add-enemy "wizard" loe)]
-    [(< (/ (random 100) 100) spawn-speed3) (add-enemy "enemy2" loe)]
-    [(< (/ (random 100) 100) spawn-speed4) (add-enemy "giant" loe)]
+    [(and (>= (player-points player) spawn-tier-enemy2) (< (/ (random 100) 100) spawn-speed2)) (add-enemy "enemy2" loe)]
+    [(and (>= (player-points player) spawn-tier-wizard) (< (/ (random 100) 100) spawn-speed3)) (add-enemy "wizard" loe)]
+    [(and (>= (player-points player) spawn-tier-giant) (< (/ (random 100) 100) spawn-speed4)) (add-enemy "giant" loe)]
     [else loe]))
 
 ; offscreen-enemies: List of enemies -> List of enemies
@@ -353,7 +358,13 @@
     [else false]))
 
 (define (final-scene ws)
-  (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws)))
+  (place-image (end-text (world-player ws)) (/ (image-width (scale worldscale blank-scene)) 2) (/ (image-height (scale worldscale blank-scene)) 2)
+  (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
+
+(define (end-text player)
+  (scale worldscale (above
+                     (text "Congratulations!" 40 "white")
+                     (text (string-append "You finished with " (number->string (player-points player)) " points!") 35 "white"))))
 
 ; key-push-handler: World structure, key -> World structure
 ; Takes a world structure and changes the "world-key" based on which
