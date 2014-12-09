@@ -17,6 +17,7 @@
 ; Constants
 (define worldscale 1)
 (define game-name "Medievala")
+
 (define speed 4)
 (define bullet-speed 1)
 (define bullet-damage 5)
@@ -31,9 +32,10 @@
 (define spawn-tier-wizard 300)
 (define spawn-tier-giant 600)
 (define spawn-tier-secret 2000)
-(define gravity 5)
-(define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
-(define font 36)
+(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
+
+; Image Constants
+(define blank-scene (scale 1.75 (bitmap "images/bg.png")))
 (define bullet-img (bitmap "images/bullet.png"))
 (define enemy1img (bitmap "images/enemy1.png"))
 (define enemy2img (bitmap "images/Enemy2.png"))
@@ -44,7 +46,6 @@
 (define rightheart (bitmap "images/rightheart.png"))
 (define leftheart (bitmap "images/leftheart.png"))
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
-(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
 (define gamename (scale worldscale (text game-name 40 "white")))
 (define rules (scale worldscale (above
                (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
@@ -55,9 +56,6 @@
                (text "Survive for as long as you can!" 20 "white")
                (text "Press X to start!" 20 "white")
                )))
-(define intro 
-  (place-image gamename (/ (image-width startscreen) 2) 50 (place-image 
-   rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen)))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
@@ -73,18 +71,18 @@
 ; show: World structure -> Image
 ; Uses helper functions to display the game
 (define (show ws)
-  (show-start ws (scale worldscale (place-hearts ws (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))))
+  (show-start ws (scale worldscale (place-hearts ws (place-points 36 (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))))
 
+; show-start: World structure, image -> Image
+; Shows the start screen until the game begins
 (define (show-start ws base)
   (cond
-    [(not (world-started ws)) intro]
+    [(not (world-started ws)) (place-image gamename (/ (image-width startscreen) 2) 50 
+                               (place-image rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen))]
     [else base]))
 
-(define (fadedhealth ws) (overlay/align "right" "middle" (heart-health (world-player ws)) (beside (bitmap "images/fadedheart.png") (bitmap "images/fadedheart.png")  (bitmap "images/fadedheart.png") (empty-scene 0 0))))
-
-(define (place-hearts ws ws-img)
-   (place-image (fadedhealth ws) (- (image-width ws-img) 50) 24 ws-img))
-
+; heart-health: Player -> Image
+; Makes an image of hearts depending on how much player health is left
 (define (heart-health player)
   (cond [(>= (player-health player) 6) (beside leftheart rightheart leftheart rightheart leftheart rightheart)]
         [(>= (player-health player) 5) (beside rightheart leftheart rightheart leftheart rightheart)]
@@ -93,7 +91,22 @@
         [(>= (player-health player) 2) (beside leftheart rightheart)]
         [(>= (player-health player) 1) rightheart]
         [else (square 0 "solid" "white")]))
-        
+
+; faded-health: World structure -> Image
+; Creates an image of faded hearts to go behind
+; the "normal" hearts
+(define (faded-health ws) 
+  (overlay/align "right" "middle" (heart-health (world-player ws))
+                 (beside 
+                  (bitmap "images/fadedheart.png") 
+                  (bitmap "images/fadedheart.png")  
+                  (bitmap "images/fadedheart.png") 
+                  (empty-scene 0 0))))
+
+; place-hearts: World structure, image -> Image
+; Places the heart images onto a base image
+(define (place-hearts ws base)
+   (place-image (faded-health ws) (- (image-width base) 50) 24 base))
 
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
@@ -144,9 +157,9 @@
     [(not (world-started ws)) ws]
     [(keys-pause (world-keys ws)) ws]
     [else (kill-enemy (make-world 
-              (player-hit (move ws) (world-enemies ws))
-              (return-bullets (offscreen-bullets (move-bullets (world-bullets ws))) (world-enemies ws))
-              (return-enemies (world-bullets ws) (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws))))))
+              (move ws)
+              (offscreen-bullets (move-bullets (world-bullets ws)))
+              (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws)))))
               (world-keys ws)
               (world-killed-enemies ws)
               (world-started ws)))]))
@@ -332,16 +345,17 @@
 
 ; kill-enemy: World structure -> World structure
 ; Checks for kileld enemies and moves it to killed-enemies
+; Also runs the collision functions
 (define (kill-enemy ws)
-  (make-world (world-player ws)
-                 (world-bullets ws)
-                 (delete-enemies (world-enemies ws))
+  (make-world (player-hit (world-player ws) (world-enemies ws))
+                 (return-bullets (world-bullets ws) (world-enemies ws))
+                 (return-enemies (world-bullets ws) (delete-enemies (world-enemies ws)))
                  (world-keys ws)
                  (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
                  (world-started ws)))
 
 ; delete-enemies: List of enemies -> List of enemies
-; Deletes enemy when enemy health is zero
+; Deletes enemy from world-enemies when enemy health is zero
 (define (delete-enemies loe)
   (cond
     [(empty? loe) empty]
@@ -363,7 +377,7 @@
     [(empty? loke) 0]
     [else (+ (enemy-type (first loke)) (count-points (rest loke)))]))
 
-; return-bullets: List of posns, list of enemies -> list of enemies
+; return-enemies: List of posns, list of enemies -> list of enemies
 ; Recursively uses enemy-hit to determine if any enemies have been hit
 (define (return-enemies lob loe)
   (cond
@@ -379,6 +393,7 @@
 
 ; check-end: World structure -> Boolean
 ; Checks if the player has been killed
+; Used to trigger end game in big-bang
 (define (check-end ws)
   (<= (player-health (world-player ws)) 0))
 
