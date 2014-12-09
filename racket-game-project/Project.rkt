@@ -41,6 +41,8 @@
 (define giantimg (bitmap "images/Giant.png"))
 (define endscreen (bitmap "images/intro.png"))
 (define secretimg (bitmap "images/secret.png"))
+(define rightheart (bitmap "images/rightheart.png"))
+(define leftheart (bitmap "images/leftheart.png"))
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
 (define gamename (scale worldscale (text game-name 40 "white")))
@@ -71,17 +73,28 @@
 ; show: World structure -> Image
 ; Uses helper functions to display the game
 (define (show ws)
-  (show-start ws (scale worldscale (place-hearts (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))))
+  (show-start ws (scale worldscale (place-hearts ws (place-points font (world-player ws) (place-player ws (place-enemies (world-enemies ws) (place-bullet (world-bullets ws) blank-scene))))))))
 
 (define (show-start ws base)
   (cond
     [(not (world-started ws)) intro]
     [else base]))
 
-(define fadedhealth (overlay/xy (bitmap "images/fadedheart.png") 30 0 (overlay/xy (bitmap "images/fadedheart.png") 30 0 (overlay/xy (bitmap "images/fadedheart.png") 30 0 (empty-scene 0 0)))))
+(define (fadedhealth ws) (overlay/align "right" "middle" (heart-health (world-player ws)) (beside (bitmap "images/fadedheart.png") (bitmap "images/fadedheart.png")  (bitmap "images/fadedheart.png") (empty-scene 0 0))))
 
-(define (place-hearts ws)
-  (place-image fadedhealth (- (image-width ws) 50) 24 ws))
+(define (place-hearts ws ws-img)
+   (place-image (fadedhealth ws) (- (image-width ws-img) 50) 24 ws-img))
+
+(define (heart-health player)
+  (cond [(>= (player-health player) 6) (beside leftheart rightheart leftheart rightheart leftheart rightheart)]
+        [(>= (player-health player) 5) (beside rightheart leftheart rightheart leftheart rightheart)]
+        [(>= (player-health player) 4) (beside leftheart rightheart leftheart rightheart)]
+        [(>= (player-health player) 3) (beside rightheart leftheart rightheart)]
+        [(>= (player-health player) 2) (beside leftheart rightheart)]
+        [(>= (player-health player) 1) rightheart]
+        [else (square 0 "solid" "white")]))
+        
+
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
 (define (place-bullet lob base)
