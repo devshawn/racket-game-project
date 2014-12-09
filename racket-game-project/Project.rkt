@@ -32,7 +32,7 @@
 (define spawn-tier-wizard 300)
 (define spawn-tier-giant 600)
 (define spawn-tier-secret 2000)
-(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
+
 
 ; Image Constants
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")))
@@ -49,6 +49,7 @@
 (define gamename (scale worldscale (text game-name 40 "white")))
 (define rules (scale worldscale (above
                (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
+               (text "Use WASD or the arrows to move!" 20 "white")
                (beside (text "The " 20 "white") enemy1img (text " is the Knight; worth 10 points!" 20 "white"))
                (beside (text "The " 20 "white") enemy2img (text " is the Black Knight; worth 20 points!" 20 "white"))
                (beside (text "The " 20 "white") wizardimg (text " is the Wizard; worth 50 points!" 20 "white"))
@@ -56,6 +57,7 @@
                (text "Survive for as long as you can!" 20 "white")
                (text "Press X to start!" 20 "white")
                )))
+(define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
@@ -242,7 +244,7 @@
     [(string=? name "enemy2") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy2img 20 10 1) loe)]
     [(string=? name "wizard") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 50 15 1) loe)]
     [(string=? name "giant") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 giantimg 100 20 1) loe)]
-    [(string=? name "secret") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 secretimg 10000 50 1) loe)]
+    [(string=? name "secret") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 secretimg 500 50 1) loe)]
     [else loe]))
 
 ; create-enemy: List of enemies -> List of enemies
@@ -307,11 +309,7 @@
 (define (delete-enemy-on-hit player loe)
   (cond
     [(empty? loe) empty]
-    [(and (<= (player-x player) (+ (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (>= (player-x player) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (<= (player-y player) (+ (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5)))
-          (>= (player-y player) (- (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5))))
-     (delete-enemy-on-hit player (rest loe))]
+    [(player-enemy-touch? player (first loe)) (delete-enemy-on-hit player (rest loe))]
     [else (cons (first loe) (delete-enemy-on-hit player (rest loe)))]))
 
 ; player-hit: Player, list of enemies -> Player
@@ -319,12 +317,17 @@
 (define (player-hit player loe)
   (cond
     [(empty? loe) player]
-    [(and (<= (player-x player) (+ (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (>= (player-x player) (- (enemy-x (first loe)) (image-width (enemy-img (first loe)))))
-          (<= (player-y player) (+ (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5)))
-          (>= (player-y player) (- (enemy-y (first loe)) (/ (image-height (enemy-img (first loe))) 1.5))))
-     (make-player (player-x player) (player-y player) (player-img player) (player-scale player) (player-points player) (- (player-health player) 1))]
+    [(player-enemy-touch? player (first loe)) (make-player (player-x player) (player-y player) (player-img player) (player-scale player) (player-points player) (- (player-health player) 1))]
     [else (player-hit player (rest loe))]))
+
+; player-enemy-touch?: Player, enemy -> Boolean
+; Checks if an enemy and a player are colliding
+(define (player-enemy-touch? player enemy)
+  (and (<= (player-x player) (+ (enemy-x enemy) (image-width (enemy-img enemy))))
+          (>= (player-x player) (- (enemy-x enemy) (image-width (enemy-img enemy))))
+          (<= (player-y player) (+ (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))
+          (>= (player-y player) (- (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))))
+  
 
 ; hurt-enemy: enemy, a function -> a functiondered with last-
 ; This is a bit of an abstract function. It either
