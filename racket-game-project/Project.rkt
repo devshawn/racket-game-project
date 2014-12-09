@@ -26,9 +26,11 @@
 (define spawn-speed2 .005)
 (define spawn-speed3 .005)
 (define spawn-speed4 0.001)
+(define spawn-speed5 0.000000001)
 (define spawn-tier-enemy2 100)
 (define spawn-tier-wizard 300)
 (define spawn-tier-giant 600)
+(define spawn-tier-secret 2000)
 (define gravity 5)
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")));(rectangle width height "solid" "lightblue"))
 (define font 36)
@@ -38,6 +40,7 @@
 (define wizardimg (bitmap "images/Wizard.png"))
 (define giantimg (bitmap "images/Giant.png"))
 (define endscreen (bitmap "images/intro.png"))
+(define secretimg (bitmap "images/secret.png"))
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
 (define gamename (scale worldscale (text game-name 40 "white")))
@@ -213,6 +216,7 @@
     [(string=? name "enemy2") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy2img 20 10 1) loe)]
     [(string=? name "wizard") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 50 15 1) loe)]
     [(string=? name "giant") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 giantimg 100 20 1) loe)]
+    [(string=? name "secret") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 secretimg 10000 50 1) loe)]
     [else loe]))
 
 ; create-enemy: List of enemies -> List of enemies
@@ -223,6 +227,7 @@
     [(and (>= (player-points player) spawn-tier-enemy2) (< (/ (random 100) 100) spawn-speed2)) (add-enemy "enemy2" loe)]
     [(and (>= (player-points player) spawn-tier-wizard) (< (/ (random 100) 100) spawn-speed3)) (add-enemy "wizard" loe)]
     [(and (>= (player-points player) spawn-tier-giant) (< (/ (random 100) 100) spawn-speed4)) (add-enemy "giant" loe)]
+    [(and (>= (player-points player) spawn-tier-secret) (< (/ (random 100) 100) spawn-speed5)) (add-enemy "secret" loe)]
     [else loe]))
 
 ; offscreen-enemies: List of enemies -> List of enemies
