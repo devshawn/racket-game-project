@@ -376,6 +376,12 @@
     [(player-enemy-touch? player (first loe)) (delete-enemy-on-hit player (rest loe))]
     [else (cons (first loe) (delete-enemy-on-hit player (rest loe)))]))
 
+(check-expect (delete-enemy-on-hit (make-player 100 400  (bitmap "images/player.png") 1.25 0 6) (list (make-enemy 20 10 secretimg 500 50 1))) 
+              (list (make-enemy 20 10 secretimg 500 50 1)))
+(check-expect (delete-enemy-on-hit (make-player 20 15 (bitmap "images/player.png") 1.25 0 6) (list (make-enemy 20 10 secretimg 500 50 1))) empty)
+(check-expect (delete-enemy-on-hit (make-player 10 15 (bitmap "images/player.png") 1.25 0 6) 
+                                   (list (make-enemy 300 300 secretimg 500 50 1) (make-enemy 200 10 secretimg 500 50 1))) (list (make-enemy 300 300 secretimg 500 50 1) (make-enemy 200 10 secretimg 500 50 1)))
+
 ; player-hit: Player, list of enemies -> Player
 ; Hurts player when player touches an enemy
 (define (player-hit player loe)
@@ -384,6 +390,16 @@
     [(player-enemy-touch? player (first loe)) (make-player (player-x player) (player-y player) (player-img player) (player-scale player) (player-points player) (- (player-health player) 1))]
     [else (player-hit player (rest loe))]))
 
+(check-expect (player-hit (make-player 100 40  (bitmap "images/player.png") 1.25 0 6)
+                          (list (make-enemy 300 300 secretimg 500 50 1)))
+              (make-player 100 40  (bitmap "images/player.png") 1.25 0 6))
+(check-expect (player-hit (make-player 100 40  (bitmap "images/player.png") 1.25 0 6)
+                          (list (make-enemy 300 300 secretimg 500 50 1) (make-enemy 100 35 secretimg 500 50 1)))
+              (make-player 100 40  (bitmap "images/player.png") 1.25 0 5))
+(check-expect (player-hit (make-player 100 43  (bitmap "images/player.png") 1.25 0 6)
+                          (list (make-enemy 101 41 secretimg 500 50 1)))
+              (make-player 100 43  (bitmap "images/player.png") 1.25 0 5))
+
 ; player-enemy-touch?: Player, enemy -> Boolean
 ; Checks if an enemy and a player are colliding
 (define (player-enemy-touch? player enemy)
@@ -391,6 +407,16 @@
        (>= (player-x player) (- (enemy-x enemy) (image-width (enemy-img enemy))))
        (<= (player-y player) (+ (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))
        (>= (player-y player) (- (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))))
+
+(check-expect (player-enemy-touch? (make-player 100 40  (bitmap "images/player.png") 1.25 0 6) 
+                                   (make-enemy 100 41 secretimg 500 50 1))
+              true)
+(check-expect (player-enemy-touch? (make-player 10 40  (bitmap "images/player.png") 1.25 0 6) 
+                                   (make-enemy 100 401 secretimg 500 50 1))
+              false)
+(check-expect (player-enemy-touch? (make-player 100 40  (bitmap "images/player.png") 1.25 0 6) 
+                                   (make-enemy 100 401 secretimg 500 50 1))
+              false)
 
 
 ; hurt-enemy: enemy, a function -> a functiondered with last-
@@ -420,6 +446,8 @@
               (world-keys ws)
               (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
               (world-started ws)))
+
+
 
 ; delete-enemies: List of enemies -> List of enemies
 ; Deletes enemy from world-enemies when enemy health is zero
@@ -463,6 +491,12 @@
     [(empty? lob) loe]
     [else (return-enemies (rest lob) (enemy-hit (first lob) loe))]))
 
+(check-expect (return-enemies (list (make-posn 500 50)) (list (make-enemy 20 10 secretimg 500 50 1)))
+              (list (make-enemy 20 10 secretimg 500 50 1)))
+(check-expect (return-enemies (list (make-posn 20 10)) (list (make-enemy 20 10 secretimg 500 50 1)))
+              (list (make-enemy 20 10 secretimg 500 45 1)))
+(check-expect (return-enemies (list (make-posn 50 50) (make-posn 300 300)) (list (make-enemy 50 50 secretimg 500 50 1) (make-enemy 200 100 secretimg 500 50 1)))
+              (list (make-enemy 50 50 secretimg 500 45 1) (make-enemy 200 100 secretimg 500 50 1)))
 
 
 ; return-bullets: List of posns, list of enemies -> list of posns
@@ -472,6 +506,12 @@
     [(empty? loe) lob]
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
+(check-expect (return-bullets (list (make-posn 500 50)) (list (make-enemy 20 10 secretimg 500 50 1)))
+              (list (make-posn 500 50)))
+(check-expect (return-bullets (list (make-posn 20 10)) (list (make-enemy 20 10 secretimg 500 50 1)))
+              empty)
+(check-expect (return-bullets (list (make-posn 50 50) (make-posn 300 300)) (list (make-enemy 50 50 secretimg 500 50 1) (make-enemy 200 100 secretimg 500 50 1)))
+              (list (make-posn 300 300)))
 
 
 ; check-end: World structure -> Boolean
@@ -483,7 +523,6 @@
 (check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 0) empty empty (make-keys false false false false false) empty false)) true)
 (check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 3) empty empty (make-keys false false false false false) empty false)) false)
 (check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 -1) empty empty (make-keys false false false false false) empty false)) true)
-
 
 ; key-push-handler: World structure, key -> World structure
 ; Takes a world structure and changes the "world-key" based on which
