@@ -48,15 +48,15 @@
 (define startscreen (scale worldscale (scale 1.75 (bitmap "images/intro.png"))))
 (define gamename (scale worldscale (text game-name 40 "white")))
 (define rules (scale worldscale (above
-               (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
-               (text "Use WASD or the arrows to move!" 20 "white")
-               (beside (text "The " 20 "white") enemy1img (text " is the Knight; worth 10 points!" 20 "white"))
-               (beside (text "The " 20 "white") enemy2img (text " is the Black Knight; worth 20 points!" 20 "white"))
-               (beside (text "The " 20 "white") wizardimg (text " is the Wizard; worth 50 points!" 20 "white"))
-               (beside (text "The " 20 "white") giantimg (text " is the Giant; worth 100 points!" 20 "white"))
-               (text "Survive for as long as you can!" 20 "white")
-               (text "Press X to start!" 20 "white")
-               )))
+                                 (text "You get two shots at a time! Press the spacebar to shoot!" 20 "white")
+                                 (text "Use WASD or the arrows to move!" 20 "white")
+                                 (beside (text "The " 20 "white") enemy1img (text " is the Knight; worth 10 points!" 20 "white"))
+                                 (beside (text "The " 20 "white") enemy2img (text " is the Black Knight; worth 20 points!" 20 "white"))
+                                 (beside (text "The " 20 "white") wizardimg (text " is the Wizard; worth 50 points!" 20 "white"))
+                                 (beside (text "The " 20 "white") giantimg (text " is the Giant; worth 100 points!" 20 "white"))
+                                 (text "Survive for as long as you can!" 20 "white")
+                                 (text "Press X to start!" 20 "white")
+                                 )))
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
 
 ; main: Number -> World
@@ -80,7 +80,7 @@
 (define (show-start ws base)
   (cond
     [(not (world-started ws)) (place-image gamename (/ (image-width startscreen) 2) 50 
-                               (place-image rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen))]
+                                           (place-image rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen))]
     [else base]))
 
 ; heart-health: Player -> Image
@@ -108,7 +108,7 @@
 ; place-hearts: World structure, image -> Image
 ; Places the heart images onto a base image
 (define (place-hearts ws base)
-   (place-image (faded-health ws) (- (image-width base) 50) 24 base))
+  (place-image (faded-health ws) (- (image-width base) 50) 24 base))
 
 ; place-bullet: List of bullets, image -> Image
 ; Places all bullets on top of a base image
@@ -140,7 +140,7 @@
 ; Creates the final scene on end game
 (define (final-scene ws)
   (place-image (end-text (world-player ws)) (/ (image-width (scale worldscale blank-scene)) 2) (/ (image-height (scale worldscale blank-scene)) 2)
-  (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
+               (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
 
 ; end-text: Player -> Image
 ; Creates the end game text from player points
@@ -159,12 +159,12 @@
     [(not (world-started ws)) ws]
     [(keys-pause (world-keys ws)) ws]
     [else (kill-enemy (make-world 
-              (move ws)
-              (offscreen-bullets (move-bullets (world-bullets ws)))
-              (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws)))))
-              (world-keys ws)
-              (world-killed-enemies ws)
-              (world-started ws)))]))
+                       (move ws)
+                       (offscreen-bullets (move-bullets (world-bullets ws)))
+                       (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws)))))
+                       (world-keys ws)
+                       (world-killed-enemies ws)
+                       (world-started ws)))]))
 
 ; move-enemies: List of enemies -> List of enemies
 ; Moves all enemies based on the enemyspeed constant
@@ -180,12 +180,21 @@
                  (enemy-scale (first loe))) 
                 (move-enemies (rest loe)))]))
 
+(check-expect (move-enemies (list (make-enemy 0 0 0 0 0 0)))  (list (make-enemy 0 enemyspeed 0 0 0 0)))
+(check-expect (move-enemies (list (make-enemy 0 0 0 0 0 0) (make-enemy 0 0 0 0 0 0)))  (list (make-enemy 0 enemyspeed 0 0 0 0) (make-enemy 0 enemyspeed 0 0 0 0)))
+(check-expect (move-enemies (list (make-enemy 0 6 0 0 0 0) (make-enemy 0 1 0 5 6 7)))  (list (make-enemy 0 (+ 6 enemyspeed) 0 0 0 0) (make-enemy 0 (+ 1 enemyspeed) 0 5 6 7)))
+
+
 ; move-bullets: List of bullets -> List of bullets
 ; Moves all bullets based on the bullet-speed constant
 (define (move-bullets lob)
   (cond
     [(empty? lob) empty]
     [else (cons (make-posn (posn-x (first lob)) (- (posn-y (first lob)) bullet-speed)) (move-bullets (rest lob)))]))
+
+(check-expect (move-bullets (list (make-posn 0 0)))  (list (make-posn 0 (- 0 bullet-speed))))
+(check-expect (move-bullets (list (make-posn 0 0) (make-posn 0 0)))  (list (make-posn 0 (- 0 bullet-speed)) (make-posn 0 (- 0 bullet-speed))))
+(check-expect (move-bullets (list (make-posn 0 6) (make-posn 0 1)))  (list (make-posn 0 (- 6 bullet-speed)) (make-posn 0 (- 1 bullet-speed))))
 
 ; move: World structure -> Player
 ; Checks the world-keys for keys-pushed. Moves the player
@@ -205,6 +214,12 @@
    (count-points (world-killed-enemies ws))
    (player-health (world-player ws))))
 
+(check-expect (move (make-world player-1 empty empty (make-keys false false false false false) empty false)) player-1)
+(check-expect (move (make-world player-1 empty empty (make-keys true false false true false) empty false)) 
+              (make-player (- (/ (image-width blank-scene) 2) speed) (+ (* (/ (image-height blank-scene) 4) 3) speed)  (bitmap "images/player.png") 1.25 0 6))
+(check-expect (move (make-world player-1 empty empty (make-keys false true true false false) empty false))
+              (make-player (+ (/ (image-width blank-scene) 2) speed) (- (* (/ (image-height blank-scene) 4) 3) speed)  (bitmap "images/player.png") 1.25 0 6))
+
 ; limit-player-x: Number -> Number
 ; Limits the player's movement in the x-axis
 (define (limit-player-x n)
@@ -212,12 +227,22 @@
         [(<= n 0) 0]
         [else n]))
 
+(check-expect (limit-player-x -1) 0)
+(check-expect (limit-player-x 0) 0)
+(check-expect (limit-player-x 5) 5)
+(check-expect (limit-player-x 10000000) (image-width blank-scene))
+
 ; limit-player-y: Number -> Number
 ; Limits the player's movement in the y-axis
 (define (limit-player-y n)
   (cond [(>= n (image-height blank-scene)) (image-height blank-scene)]
         [(<= n 0) 0]
         [else n]))
+
+(check-expect (limit-player-y -1) 0)
+(check-expect (limit-player-y 0) 0)
+(check-expect (limit-player-y 5) 5)
+(check-expect (limit-player-y 10000000) (image-height blank-scene))
 
 ; shoot: World structure -> World structure
 ; Re-makes the world structure adding a bullet
@@ -227,14 +252,22 @@
     [(keys-pause (world-keys ws)) ws]
     [else (make-world (world-player ws) (add-bullet ws) (world-enemies ws) (world-keys ws) (world-killed-enemies ws) (world-started ws))]))
 
+;can't do check-expect because of the (not (world-started ws)) condition
+
 ; add-bullet: World structure -> List of bullets
 ; Adds a new bullet shot from the current player position
 ; to the current list of bullets
 (define (add-bullet ws)
   (if (< (length (world-bullets ws)) bullet-limit) (cons (make-posn 
-         (player-x (world-player ws)) 
-         (- (player-y (world-player ws)) (* (player-scale (world-player ws)) (/ (image-height (player-img (world-player ws))) 2)))) 
-        (world-bullets ws)) (world-bullets ws)))
+                                                          (player-x (world-player ws)) 
+                                                          (- (player-y (world-player ws)) (* (player-scale (world-player ws)) (/ (image-height (player-img (world-player ws))) 2)))) 
+                                                         (world-bullets ws)) (world-bullets ws)))
+(check-expect (add-bullet (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 6) empty empty (make-keys false false false false false) empty false))
+              (list (make-posn 1 -15.5)))
+(check-expect (add-bullet (make-world (make-player 6 100  (bitmap "images/player.png") 1.25 0 6) empty empty (make-keys false false false false false) empty false))
+              (list (make-posn 6 82.5)))
+(check-expect (add-bullet (make-world (make-player 100 40  (bitmap "images/player.png") 1.25 0 6) empty empty (make-keys false false false false false) empty false))
+              (list (make-posn 100 22.5)))
 
 ; add-enemy: List of enemies -> List of enemies
 ; Adds an enemy to the current list of enemies
@@ -247,6 +280,17 @@
     [(string=? name "secret") (cons (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 secretimg 500 50 1) loe)]
     [else loe]))
 
+(check-random (add-enemy "enemy1" empty)
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy1img 10 5 1)))
+(check-random (add-enemy "enemy2" empty)
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 enemy2img 20 10 1)))
+(check-random (add-enemy "wizard" empty)
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 wizardimg 50 15 1)))
+(check-random (add-enemy "giant" empty)
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 giantimg 100 20 1)))
+(check-random (add-enemy "secret" empty)
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) -20 secretimg 500 50 1)))
+
 ; create-enemy: List of enemies -> List of enemies
 ; Creates an enemy based on the spawn-speed probability
 (define (create-enemy player loe)
@@ -258,6 +302,8 @@
     [(and (>= (player-points player) spawn-tier-secret) (< (/ (random 100) 100) spawn-speed5)) (add-enemy "secret" loe)]
     [else loe]))
 
+;no way to use check-expect or check-random because of many different random tiers
+
 ; offscreen-enemies: List of enemies -> List of enemies
 ; Removes enemies that have gone off of the visible screen (del (points ws))
 (define (offscreen-enemies loe)
@@ -266,6 +312,11 @@
     [(> (enemy-y (first loe)) (+ (image-height blank-scene) (image-height (enemy-img (first loe))))) (offscreen-enemies (rest loe))]
     [else (cons (first loe) (offscreen-enemies (rest loe)))]))
 
+(check-expect (offscreen-enemies empty) empty)
+(check-expect (offscreen-enemies (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) 100000 secretimg 500 50 1))) empty)
+(check-random (offscreen-enemies (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) 100 secretimg 500 50 1))) 
+              (list (make-enemy (* (random (floor (/ (image-width blank-scene) 10))) 10) 100 secretimg 500 50 1)))
+
 ; offscreen-bullets: List of bullets -> List of bullets
 ; Removes bullets that have gone off of the visible screen
 (define (offscreen-bullets lob)
@@ -273,6 +324,10 @@
     [(empty? lob) empty]
     [(< (posn-y (first lob)) (- 0 (image-height bullet-img))) (offscreen-bullets (rest lob))]
     [else (cons (first lob) (offscreen-bullets (rest lob)))]))
+
+(check-expect (offscreen-bullets empty) empty)
+(check-expect (offscreen-bullets (list (make-posn 10 10))) (list (make-posn 10 10)))
+(check-expect (offscreen-bullets (list (make-posn 10 -100))) empty)
 
 ; COLLISION
 
@@ -324,10 +379,10 @@
 ; Checks if an enemy and a player are colliding
 (define (player-enemy-touch? player enemy)
   (and (<= (player-x player) (+ (enemy-x enemy) (image-width (enemy-img enemy))))
-          (>= (player-x player) (- (enemy-x enemy) (image-width (enemy-img enemy))))
-          (<= (player-y player) (+ (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))
-          (>= (player-y player) (- (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))))
-  
+       (>= (player-x player) (- (enemy-x enemy) (image-width (enemy-img enemy))))
+       (<= (player-y player) (+ (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))
+       (>= (player-y player) (- (enemy-y enemy) (/ (image-height (enemy-img enemy)) 1.5)))))
+
 
 ; hurt-enemy: enemy, a function -> a functiondered with last-
 ; This is a bit of an abstract function. It either
@@ -351,11 +406,11 @@
 ; Also runs the collision functions
 (define (kill-enemy ws)
   (make-world (player-hit (world-player ws) (world-enemies ws))
-                 (return-bullets (world-bullets ws) (world-enemies ws))
-                 (return-enemies (world-bullets ws) (delete-enemies (world-enemies ws)))
-                 (world-keys ws)
-                 (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
-                 (world-started ws)))
+              (return-bullets (world-bullets ws) (world-enemies ws))
+              (return-enemies (world-bullets ws) (delete-enemies (world-enemies ws)))
+              (world-keys ws)
+              (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
+              (world-started ws)))
 
 ; delete-enemies: List of enemies -> List of enemies
 ; Deletes enemy from world-enemies when enemy health is zero
@@ -440,19 +495,19 @@
     [(key=? " " a-key) (shoot ws)]
     [(and (key=? "p" a-key)
           (world-started ws)) (make-world 
-                                (world-player ws) 
-                                (world-bullets ws) 
-                                (world-enemies ws) 
-                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (not (keys-pause (world-keys ws))))
-                                (world-killed-enemies ws)
-                                (world-started ws))]
+                               (world-player ws) 
+                               (world-bullets ws) 
+                               (world-enemies ws) 
+                               (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (not (keys-pause (world-keys ws))))
+                               (world-killed-enemies ws)
+                               (world-started ws))]
     [(key=? "x" a-key) (make-world 
-                                (world-player ws) 
-                                (world-bullets ws) 
-                                (world-enemies ws) 
-                                (world-keys ws)
-                                (world-killed-enemies ws)
-                                true)]
+                        (world-player ws) 
+                        (world-bullets ws) 
+                        (world-enemies ws) 
+                        (world-keys ws)
+                        (world-killed-enemies ws)
+                        true)]
     [else ws]))
 
 ; key-release-handler: World structure, key -> World structure
@@ -494,4 +549,4 @@
                                 (world-started ws))]
     [else ws]))
 
-(main 10000000000)
+;(main 10000000000)
