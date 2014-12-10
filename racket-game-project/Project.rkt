@@ -262,6 +262,7 @@
                                                           (player-x (world-player ws)) 
                                                           (- (player-y (world-player ws)) (* (player-scale (world-player ws)) (/ (image-height (player-img (world-player ws))) 2)))) 
                                                          (world-bullets ws)) (world-bullets ws)))
+
 (check-expect (add-bullet (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 6) empty empty (make-keys false false false false false) empty false))
               (list (make-posn 1 -15.5)))
 (check-expect (add-bullet (make-world (make-player 6 100  (bitmap "images/player.png") 1.25 0 6) empty empty (make-keys false false false false false) empty false))
@@ -345,6 +346,10 @@
      (hurt-enemy (first loe) (enemy-hit bullet (rest loe)))]
     [else (cons (first loe) (enemy-hit bullet (rest loe)))]))
 
+(check-expect (enemy-hit (make-posn 10 10) empty) empty)
+(check-expect (enemy-hit (make-posn 10 10) (list (make-enemy 10 10 secretimg 500 50 1))) (list (make-enemy 10 10 secretimg 500 45 1)))
+(check-expect (enemy-hit (make-posn 1000 10) (list (make-enemy 10 10 secretimg 500 50 1))) (list (make-enemy 10 10 secretimg 500 50 1)))
+
 ; bullet-hit: List of bullets, enemy -> List of bullets
 ; Checks all bullets for touching one enemy. If they touch,
 ; this function removes the bullet and returns the
@@ -358,6 +363,10 @@
           (>= (posn-y (first lob)) (- (enemy-y enemy) (image-height (enemy-img enemy)))))
      (bullet-hit (rest lob) enemy)]
     [else (cons (first lob) (bullet-hit (rest lob) enemy))]))
+
+(check-expect (bullet-hit (list (make-posn 10 10)) (make-enemy 10 10 secretimg 500 50 1)) empty)
+(check-expect (bullet-hit (list (make-posn 1000 10)) (make-enemy 10 10 secretimg 500 50 1)) (list (make-posn 1000 10)))
+(check-expect (bullet-hit (list (make-posn 10 10)) (make-enemy 20 10 secretimg 500 50 1)) empty)
 
 ; delete-enemy-on-hit: Player, list of enemies -> List of enemies
 ; Deletes the enemy when hit by a player
@@ -420,13 +429,21 @@
     [(= (enemy-health (first loe)) 0) (delete-enemies (rest loe))]
     [else (cons (first loe) (delete-enemies (rest loe)))]))
 
+(check-expect (delete-enemies empty) empty)
+(check-expect (delete-enemies (list (make-enemy 10 10 secretimg 500 0 1))) empty)
+(check-expect (delete-enemies (list (make-enemy 10 10 secretimg 500 1 1))) (list (make-enemy 10 10 secretimg 500 1 1)))
+
 ; filter-enemies: List of enemies -> List of enemies
 ; "Moves" killed enemies to killed-enemies in the world structure
 (define (filter-enemies loe)
   (cond
     [(empty? loe) empty]
-    [(= (enemy-health (first loe)) 0) (cons (first loe) (filter-enemies (rest loe)))]
+    [(<= (enemy-health (first loe)) 0) (cons (first loe) (filter-enemies (rest loe)))]
     [else (filter-enemies (rest loe))]))
+
+(check-expect (filter-enemies empty) empty)
+(check-expect (filter-enemies (list (make-enemy 10 10 secretimg 500 0 1))) (list (make-enemy 10 10 secretimg 500 0 1)))
+(check-expect (filter-enemies (list (make-enemy 10 10 secretimg 500 1 1))) empty)
 
 ; count-points: List of killed enemies -> Number
 ; Adds the points of each killed enemy
@@ -435,12 +452,18 @@
     [(empty? loke) 0]
     [else (+ (enemy-type (first loke)) (count-points (rest loke)))]))
 
+(check-expect (count-points (list (make-enemy 20 10 secretimg 500 50 1) (make-enemy 20 10 secretimg 500 50 1))) 1000)
+(check-expect (count-points (list (make-enemy 20 10 secretimg 130 50 1) (make-enemy 20 10 secretimg 500 50 1))) 630)
+(check-expect (count-points (list (make-enemy 20 10 secretimg -500 50 1) (make-enemy 20 10 secretimg 500 50 1))) 0)
+
 ; return-enemies: List of posns, list of enemies -> list of enemies
 ; Recursively uses enemy-hit to determine if any enemies have been hit
 (define (return-enemies lob loe)
   (cond
     [(empty? lob) loe]
     [else (return-enemies (rest lob) (enemy-hit (first lob) loe))]))
+
+
 
 ; return-bullets: List of posns, list of enemies -> list of posns
 ; Recursively uses bullet-hit to determine if any bullets hit any enemies
@@ -449,11 +472,18 @@
     [(empty? loe) lob]
     [else (return-bullets (bullet-hit lob (first loe)) (rest loe))]))
 
+
+
 ; check-end: World structure -> Boolean
 ; Checks if the player has been killed
 ; Used to trigger end game in big-bang
 (define (check-end ws)
   (<= (player-health (world-player ws)) 0))
+
+(check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 0) empty empty (make-keys false false false false false) empty false)) true)
+(check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 3) empty empty (make-keys false false false false false) empty false)) false)
+(check-expect (check-end (make-world (make-player 1 2  (bitmap "images/player.png") 1.25 0 -1) empty empty (make-keys false false false false false) empty false)) true)
+
 
 ; key-push-handler: World structure, key -> World structure
 ; Takes a world structure and changes the "world-key" based on which
