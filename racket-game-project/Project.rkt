@@ -618,4 +618,4 @@
                                 (world-started ws))]
     [else ws]))
 
-;(main 10000000000)
+(main 10000000000)
