@@ -12,17 +12,17 @@
 (define-struct player [x y img scale points health])
 (define-struct enemy [x y img type health scale])
 (define-struct keys [left right up down pause])
-(define-struct world [player bullets enemies keys killed-enemies started]) ; Player struct, list of posns, list of enemies structs
+(define-struct world [player bullets enemies keys killed-enemies mode]) ; Player struct, list of posns, list of enemies structs
 
 ; Constants
 (define worldscale 1)
 (define game-name "Medievala")
 
-(define speed 4)
-(define bullet-speed 1)
+(define speed (* worldscale 4))
+(define bullet-speed (* worldscale 1))
 (define bullet-damage 5)
 (define bullet-limit 2)
-(define enemyspeed 1)
+(define enemyspeed (* worldscale 1))
 (define spawn-speed .03)
 (define spawn-speed2 .005)
 (define spawn-speed3 .005)
@@ -32,7 +32,6 @@
 (define spawn-tier-wizard 300)
 (define spawn-tier-giant 600)
 (define spawn-tier-secret 2000)
-
 
 ; Image Constants
 (define blank-scene (scale 1.75 (bitmap "images/bg.png")))
@@ -58,15 +57,15 @@
                                  (text "Press X to start!" 20 "white")
                                  )))
 (define player-1 (make-player (/ (image-width blank-scene) 2) (* (/ (image-height blank-scene) 4) 3)  (bitmap "images/player.png") 1.25 0 6))
+(define default-world (make-world player-1 empty empty (make-keys false false false false false) empty "start"))
 
 ; main: Number -> World
 ; Creates a world of our game that will last a given duration
 (define (main duration)
-  (big-bang (make-world player-1 empty empty (make-keys false false false false false) empty false) 
+  (big-bang default-world 
             [to-draw show]
             [on-tick tick .01 duration]
             [on-key key-push-handler]
-            [stop-when check-end final-scene]
             [on-release key-release-handler]
             [name game-name]))
 
@@ -79,8 +78,9 @@
 ; Shows the start screen until the game begins
 (define (show-start ws base)
   (cond
-    [(not (world-started ws)) (place-image gamename (/ (image-width startscreen) 2) 50 
+    [(string=? "start" (world-mode ws)) (place-image gamename (/ (image-width startscreen) 2) 50 
                                            (place-image rules (/ (image-width startscreen) 2) (+ (/ (image-height startscreen) 2) 30) startscreen))]
+    [(string=? "end" (world-mode ws)) (show-end ws base)]
     [else base]))
 
 ; heart-health: Player -> Image
@@ -136,11 +136,11 @@
 (define (place-player ws base)
   (place-image (scale (player-scale (world-player ws)) (player-img (world-player ws))) (player-x (world-player ws)) (player-y (world-player ws)) base))
 
-; final-scene: World structure -> Image
+; show-end: World structure -> Image
 ; Creates the final scene on end game
-(define (final-scene ws)
+(define (show-end ws base)
   (place-image (end-text (world-player ws)) (/ (image-width (scale worldscale blank-scene)) 2) (/ (image-height (scale worldscale blank-scene)) 2)
-               (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) (show ws))))
+               (place-image (scale worldscale (scale 1.75 (rectangle (image-width blank-scene) (image-height blank-scene) "solid" (make-color 132 132 132 150)))) (/ (image-width blank-scene) 2) (/ (image-height blank-scene) 2) base)))
 
 ; end-text: Player -> Image
 ; Creates the end game text from player points
@@ -149,22 +149,24 @@
                      (text "Congratulations!" 40 "white")
                      (text (string-append "You finished with " (number->string (player-points player)) " points!") 35 "white")
                      (text " " 25 "white")
-                     (text (string-append "Thank you for playing " game-name "!") 30 "white"))))
+                     (text (string-append "Thank you for playing " game-name "!") 30 "white")
+                     (text "Press R to play again!" 30 "white"))))
 
 ; tick: World structure -> World structure
 ; on-tick function of our big-bang.
 ; Creates our world using multiple functions that change the game
 (define (tick ws)
   (cond
-    [(not (world-started ws)) ws]
+    [(not (string=? "game" (world-mode ws))) ws]
     [(keys-pause (world-keys ws)) ws]
+    [(check-end ws) (make-world (world-player ws) (world-bullets ws) (world-enemies ws) (world-keys ws) (world-killed-enemies ws) "end")]
     [else (kill-enemy (make-world 
                        (move ws)
                        (offscreen-bullets (move-bullets (world-bullets ws)))
                        (offscreen-enemies (move-enemies (create-enemy (world-player ws) (delete-enemy-on-hit (world-player ws) (world-enemies ws)))))
                        (world-keys ws)
                        (world-killed-enemies ws)
-                       (world-started ws)))]))
+                       (world-mode ws)))]))
 
 ; move-enemies: List of enemies -> List of enemies
 ; Moves all enemies based on the enemyspeed constant
@@ -248,11 +250,11 @@
 ; Re-makes the world structure adding a bullet
 (define (shoot ws)
   (cond
-    [(not (world-started ws)) ws]
+    [(not (string=? "game" (world-mode ws))) ws]
     [(keys-pause (world-keys ws)) ws]
-    [else (make-world (world-player ws) (add-bullet ws) (world-enemies ws) (world-keys ws) (world-killed-enemies ws) (world-started ws))]))
+    [else (make-world (world-player ws) (add-bullet ws) (world-enemies ws) (world-keys ws) (world-killed-enemies ws) (world-mode ws))]))
 
-;can't do check-expect because of the (not (world-started ws)) condition
+;can't do check-expect because of the (not (world-mode ws)) condition
 
 ; add-bullet: World structure -> List of bullets
 ; Adds a new bullet shot from the current player position
@@ -445,7 +447,7 @@
               (return-enemies (world-bullets ws) (delete-enemies (world-enemies ws)))
               (world-keys ws)
               (append (filter-enemies (world-enemies ws)) (world-killed-enemies ws))
-              (world-started ws)))
+              (world-mode ws)))
 
 
 
@@ -513,7 +515,6 @@
 (check-expect (return-bullets (list (make-posn 50 50) (make-posn 300 300)) (list (make-enemy 50 50 secretimg 500 50 1) (make-enemy 200 100 secretimg 500 50 1)))
               (list (make-posn 300 300)))
 
-
 ; check-end: World structure -> Boolean
 ; Checks if the player has been killed
 ; Used to trigger end game in big-bang
@@ -536,7 +537,7 @@
                              (world-enemies ws) 
                              (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) true (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                              (world-killed-enemies ws)
-                             (world-started ws))]
+                             (world-mode ws))]
     [(or (key=? "s" a-key)
          (key=? "down" a-key))(make-world 
                                (world-player ws) 
@@ -544,7 +545,7 @@
                                (world-enemies ws) 
                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) true (keys-pause (world-keys ws)))
                                (world-killed-enemies ws)
-                               (world-started ws))]
+                               (world-mode ws))]
     [(or (key=? "a" a-key)
          (key=? "left" a-key))(make-world 
                                (world-player ws) 
@@ -552,7 +553,7 @@
                                (world-enemies ws) 
                                (make-keys true (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                                (world-killed-enemies ws)
-                               (world-started ws))]
+                               (world-mode ws))]
     [(or (key=? "d" a-key)
          (key=? "right" a-key))(make-world 
                                 (world-player ws) 
@@ -560,23 +561,25 @@
                                 (world-enemies ws) 
                                 (make-keys (keys-left (world-keys ws)) true (keys-up (world-keys ws)) (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                                 (world-killed-enemies ws)
-                                (world-started ws))]
+                                (world-mode ws))]
     [(key=? " " a-key) (shoot ws)]
     [(and (key=? "p" a-key)
-          (world-started ws)) (make-world 
+          (string=? "game" (world-mode ws))) (make-world 
                                (world-player ws) 
                                (world-bullets ws) 
                                (world-enemies ws) 
                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (not (keys-pause (world-keys ws))))
                                (world-killed-enemies ws)
-                               (world-started ws))]
+                               (world-mode ws))]
     [(key=? "x" a-key) (make-world 
                         (world-player ws) 
                         (world-bullets ws) 
                         (world-enemies ws) 
                         (world-keys ws)
                         (world-killed-enemies ws)
-                        true)]
+                        "game")]
+    [(and (key=? "r" a-key)
+          (string=? "end" (world-mode ws))) default-world]
     [else ws]))
 
 ; key-release-handler: World structure, key -> World structure
@@ -591,7 +594,7 @@
                              (world-enemies ws) 
                              (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) false (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                              (world-killed-enemies ws)
-                             (world-started ws))]
+                             (world-mode ws))]
     [(or (key=? "s" a-key)
          (key=? "down" a-key))(make-world 
                                (world-player ws) 
@@ -599,7 +602,7 @@
                                (world-enemies ws) 
                                (make-keys (keys-left (world-keys ws)) (keys-right (world-keys ws)) (keys-up (world-keys ws)) false (keys-pause (world-keys ws)))
                                (world-killed-enemies ws)
-                               (world-started ws))]
+                               (world-mode ws))]
     [(or (key=? "a" a-key)
          (key=? "left" a-key))(make-world 
                                (world-player ws) 
@@ -607,7 +610,7 @@
                                (world-enemies ws) 
                                (make-keys false (keys-right (world-keys ws)) (keys-up (world-keys ws)) (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                                (world-killed-enemies ws)
-                               (world-started ws))]
+                               (world-mode ws))]
     [(or (key=? "d" a-key)
          (key=? "right" a-key))(make-world 
                                 (world-player ws) 
@@ -615,7 +618,7 @@
                                 (world-enemies ws) 
                                 (make-keys (keys-left (world-keys ws)) false (keys-up (world-keys ws)) (keys-down (world-keys ws)) (keys-pause (world-keys ws)))
                                 (world-killed-enemies ws)
-                                (world-started ws))]
+                                (world-mode ws))]
     [else ws]))
 
 (main 10000000000)
